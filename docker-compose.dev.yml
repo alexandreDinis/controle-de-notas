@@ -1,0 +1,16 @@
+services:
+  db-dev:
+    image: postgres:16-alpine
+    container_name: controle-notas-db
+    environment:
+      POSTGRES_DB: controle_notas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - controle_notas_dev_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  controle_notas_dev_data:

@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
+
+echo "========================================================"
+echo "🚀 Iniciando Sistema de Notas Fiscais (PRODUÇÃO)"
+echo "========================================================"
+
+# Verificar se as portas de produção (8090, 8091, 5438) estão livres
+for PORT in 8090 8091 5438; do
+  if ss -tulpn | grep -q ":$PORT "; then
+    echo "⚠️  Aviso: A porta $PORT parece estar em uso. Verifique se o container antigo já está rodando."
+  fi
+done
+
+echo "📦 Subindo containers de Produção (PostgreSQL 5438, Backend 8091, Frontend 8090)..."
+docker compose -f docker-compose.prod.yml up -d --build
+
+echo "--------------------------------------------------------"
+echo "✅ Sistema NotaControl (PRODUÇÃO) rodando com sucesso!"
+echo "🌐 Acesse a aplicação na web: http://localhost:8090"
+echo "API Backend (interna): http://localhost:8091"
+echo "========================================================"

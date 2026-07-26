@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
+
+echo "========================================================"
+echo "🛠️  Iniciando Sistema de Notas Fiscais (DESENVOLVIMENTO)"
+echo "========================================================"
+
+echo "📦 Subindo Banco de Dados de Desenvolvimento (PostgreSQL 5432)..."
+docker compose -f docker-compose.dev.yml up -d
+
+echo "⏳ Aguardando banco de dados inicializar..."
+sleep 3
+
+echo "🚀 Iniciando Backend (Spring Boot na porta 8080) em segundo plano..."
+cd backend
+./mvnw spring-boot:run > backend.log 2>&1 &
+BACKEND_PID=$!
+cd ..
+
+echo "🚀 Iniciando Frontend (Vite na porta 5173) em segundo plano..."
+cd frontend
+npm run dev > frontend.log 2>&1 &
+FRONTEND_PID=$!
+cd ..
+
+echo "--------------------------------------------------------"
+echo "✅ Ambiente de Desenvolvimento Iniciado com Sucesso!"
+echo "🌐 Frontend (Vite): http://localhost:5173"
+echo "⚙️  Backend (Spring Boot): http://localhost:8080"
+echo "🗄️  Banco de Dados: localhost:5432 (controle_notas)"
+echo "--------------------------------------------------------"
+echo "Logs gravados em backend/backend.log e frontend/frontend.log"
+echo "PIDs: Backend ($BACKEND_PID), Frontend ($FRONTEND_PID)"
+echo "========================================================"

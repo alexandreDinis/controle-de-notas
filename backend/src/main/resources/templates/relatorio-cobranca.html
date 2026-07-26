@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Relatório de Cobrança</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #1a202c;
+            line-height: 1.5;
+            font-size: 13px;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+        }
+
+        .header-table td {
+            vertical-align: middle;
+        }
+
+        .logo-img {
+            max-height: 60px;
+            max-width: 180px;
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .company-doc {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .report-title {
+            text-align: right;
+        }
+
+        .report-title h2 {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2563eb;
+            margin: 0;
+        }
+
+        .report-title p {
+            font-size: 11px;
+            color: #64748b;
+            margin: 2px 0 0 0;
+        }
+
+        .section-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #475569;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .client-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .client-info td {
+            font-size: 13px;
+            padding: 2px 0;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .items-table th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .items-table th.align-right {
+            text-align: right;
+        }
+
+        .items-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 12px;
+        }
+
+        .items-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .total-box {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 25px;
+        }
+
+        .total-box td {
+            padding: 12px 16px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+        }
+
+        .total-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .total-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-align: right;
+            font-family: monospace;
+        }
+
+        .payment-box {
+            background-color: #f1f5f9;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-top: 30px;
+        }
+
+        .payment-box h3 {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #334155;
+            margin: 0 0 8px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .payment-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .payment-grid td {
+            font-size: 12px;
+            padding: 3px 0;
+            color: #334155;
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Table -->
+    <table class="header-table" style="width: 100%; margin-bottom: 20px;">
+        <tr>
+            <td style="width: 60%;">
+                <div th:if="${empresaLogoBase64 != null}" style="margin-bottom: 8px;">
+                    <img th:src="${empresaLogoBase64}" class="logo-img" alt="Logo Empresa"/>
+                </div>
+                <div class="company-name" th:text="${(empresa.nome != null &amp;&amp; !empresa.nome.isBlank()) ? empresa.nome : 'Empresa'}">Minha Empresa</div>
+                <div class="company-doc" th:if="${empresa.documento != null &amp;&amp; !empresa.documento.isBlank()}" th:text="${'CNPJ/CPF: ' + empresa.documento}">CNPJ/CPF: 00.000.000/0001-00</div>
+            </td>
+            <td class="report-title" style="width: 40%;">
+                <h2>Relatório de Cobrança</h2>
+                <p th:text="${'Período: ' + #temporals.format(inicio, 'dd/MM/yyyy') + ' a ' + #temporals.format(fim, 'dd/MM/yyyy')}">Período: 01/01/2025 a 31/12/2025</p>
+                <p th:text="${'Emissão: ' + #temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm')}">Emissão: 26/07/2026</p>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Client Box -->
+    <div class="section-box client-info">
+        <div class="section-title">Dados do Cliente</div>
+        <table>
+            <tr>
+                <td><strong>Cliente:</strong> <span th:text="${cliente.nome}">Nome do Cliente</span></td>
+                <td style="text-align: right;" th:if="${cliente.documento != null &amp;&amp; !cliente.documento.isBlank()}"><strong>Documento:</strong> <span th:text="${cliente.documento}">000.000.000-00</span></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Items Table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 25%;">Nº da Nota</th>
+                <th style="width: 25%;">Data de Emissão</th>
+                <th style="width: 25%;">Prazo Pagamento</th>
+                <th class="align-right" style="width: 25%;">Valor (R$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="nota : ${notas}">
+                <td style="font-weight: bold; font-family: monospace;" th:text="${'NF ' + nota.numeroNota}">NF 001</td>
+                <td th:text="${#temporals.format(nota.dataEmissao, 'dd/MM/yyyy')}">01/01/2025</td>
+                <td th:text="${#temporals.format(nota.prazoPagamento, 'dd/MM/yyyy')}">15/01/2025</td>
+                <td class="align-right" style="font-family: monospace; font-weight: bold;" th:text="${'R$ ' + #numbers.formatDecimal(nota.valor, 1, 'POINT', 2, 'COMMA')}">R$ 1.000,00</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(notas)}">
+                <td colspan="4" style="text-align: center; color: #64748b; padding: 20px;">Nenhuma nota fiscal emitida no período informado.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Total Box -->
+    <table class="total-box">
+        <tr>
+            <td class="total-label" style="width: 50%;">TOTAL GERAL DO PERÍODO</td>
+            <td class="total-amount" style="width: 50%;" th:text="${'R$ ' + #numbers.formatDecimal(totalNotas, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+        </tr>
+    </table>
+
+    <!-- Payment Information Box -->
+    <div class="payment-box" th:if="${(empresa.chavePix != null &amp;&amp; !empresa.chavePix.isBlank()) || (empresa.banco != null &amp;&amp; !empresa.banco.isBlank())}">
+        <h3>Dados para Pagamento</h3>
+        <table class="payment-grid">
+            <tr th:if="${empresa.chavePix != null &amp;&amp; !empresa.chavePix.isBlank()}">
+                <td style="width: 25%;"><strong>Chave PIX:</strong></td>
+                <td style="font-family: monospace; font-weight: bold;" th:text="${empresa.chavePix}">pix@empresa.com</td>
+            </tr>
+            <tr th:if="${empresa.banco != null &amp;&amp; !empresa.banco.isBlank()}">
+                <td colspan="2">
+                    <strong>Banco:</strong> <span th:text="${empresa.banco}">Banco do Brasil</span>
+                    <span th:if="${empresa.agencia != null &amp;&amp; !empresa.agencia.isBlank()}">&#160;|&#160; <strong>Agência:</strong> <span th:text="${empresa.agencia}">0001</span></span>
+                    <span th:if="${empresa.conta != null &amp;&amp; !empresa.conta.isBlank()}">&#160;|&#160; <strong>Conta:</strong> <span th:text="${empresa.conta}">12345-6</span></span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+        Relatório gerado automaticamente pelo Sistema de Controle de Notas Fiscais.
+    </div>
+
+</body>
+</html>

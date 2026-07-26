@@ -1,0 +1,43 @@
+services:
+  db-prod:
+    image: postgres:16-alpine
+    container_name: nf-control-db-prod
+    environment:
+      POSTGRES_DB: controle_notas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5438:5432"
+    volumes:
+      - nf_control_prod_data:/var/lib/postgresql/data
+    restart: always
+
+  backend-prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nf-control-backend-prod
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-prod:5432/controle_notas
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8091:8080"
+    depends_on:
+      db-prod:
+        condition: service_started
+    restart: always
+
+  frontend-prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nf-control-frontend-prod
+    ports:
+      - "8090:80"
+    depends_on:
+      - backend-prod
+    restart: always
+
+volumes:
+  nf_control_prod_data:
