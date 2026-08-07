@@ -150,6 +150,42 @@
             font-family: monospace;
         }
 
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-paga {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-nao-paga {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .status-vencida {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .filtro-label {
+            font-size: 10px;
+            color: #2563eb;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .payment-box {
             background-color: #f1f5f9;
             border: 1px dashed #cbd5e1;
@@ -204,6 +240,7 @@
                 <h2>Relatório de Cobrança</h2>
                 <p th:text="${'Período: ' + #temporals.format(inicio, 'dd/MM/yyyy') + ' a ' + #temporals.format(fim, 'dd/MM/yyyy')}">Período: 01/01/2025 a 31/12/2025</p>
                 <p th:text="${'Emissão: ' + #temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm')}">Emissão: 26/07/2026</p>
+                <p th:if="${filtroLabel != null}" class="filtro-label" th:text="${'Filtro: ' + filtroLabel}">Filtro: Apenas Notas Pagas</p>
             </td>
         </tr>
     </table>
@@ -223,10 +260,11 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 25%;">Nº da Nota</th>
-                <th style="width: 25%;">Data de Emissão</th>
-                <th style="width: 25%;">Prazo Pagamento</th>
-                <th class="align-right" style="width: 25%;">Valor (R$)</th>
+                <th style="width: 20%;">Nº da Nota</th>
+                <th style="width: 20%;">Data de Emissão</th>
+                <th style="width: 20%;">Prazo Pagamento</th>
+                <th style="width: 18%; text-align: center;">Status</th>
+                <th class="align-right" style="width: 22%;">Valor (R$)</th>
             </tr>
         </thead>
         <tbody>
@@ -234,10 +272,15 @@
                 <td style="font-weight: bold; font-family: monospace;" th:text="${'NF ' + nota.numeroNota}">NF 001</td>
                 <td th:text="${#temporals.format(nota.dataEmissao, 'dd/MM/yyyy')}">01/01/2025</td>
                 <td th:text="${#temporals.format(nota.prazoPagamento, 'dd/MM/yyyy')}">15/01/2025</td>
+                <td style="text-align: center;">
+                    <span th:if="${nota.statusPagamento == 'PAGA'}" class="status-badge status-paga">PAGA</span>
+                    <span th:if="${nota.statusPagamento == 'NAO_PAGA'}" class="status-badge status-nao-paga">NÃO PAGA</span>
+                    <span th:if="${nota.statusPagamento == 'VENCIDA'}" class="status-badge status-vencida">ATRASADA</span>
+                </td>
                 <td class="align-right" style="font-family: monospace; font-weight: bold;" th:text="${'R$ ' + #numbers.formatDecimal(nota.valor, 1, 'POINT', 2, 'COMMA')}">R$ 1.000,00</td>
             </tr>
             <tr th:if="${#lists.isEmpty(notas)}">
-                <td colspan="4" style="text-align: center; color: #64748b; padding: 20px;">Nenhuma nota fiscal emitida no período informado.</td>
+                <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">Nenhuma nota fiscal encontrada para o filtro selecionado.</td>
             </tr>
         </tbody>
     </table>

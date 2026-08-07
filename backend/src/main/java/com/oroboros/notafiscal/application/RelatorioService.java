@@ -1,5 +1,6 @@
 package com.oroboros.notafiscal.application;
 
+import com.oroboros.notafiscal.domain.notafiscal.StatusPagamento;
 import com.oroboros.notafiscal.infrastructure.persistence.entity.NotaFiscalEntity;
 import com.oroboros.notafiscal.infrastructure.persistence.entity.ServicoEntity;
 import com.oroboros.notafiscal.infrastructure.persistence.repository.*;
@@ -26,6 +27,11 @@ public class RelatorioService {
      */
     @Transactional(readOnly = true)
     public RelatorioNotasResponse notasPorClientePeriodo(Long clienteId, LocalDate inicio, LocalDate fim) {
+        return notasPorClientePeriodo(clienteId, inicio, fim, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RelatorioNotasResponse notasPorClientePeriodo(Long clienteId, LocalDate inicio, LocalDate fim, String statusFiltro) {
         if (!clienteRepository.existsById(clienteId)) {
             throw new EntityNotFoundException("Cliente não encontrado: " + clienteId);
         }
@@ -33,16 +39,27 @@ public class RelatorioService {
         List<NotaFiscalEntity> notas = notaFiscalRepository
                 .findByClienteIdAndDataEmissaoBetweenOrderByDataEmissaoAsc(clienteId, inicio, fim);
 
-        BigDecimal totalNotas = notas.stream()
-                .map(NotaFiscalEntity::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         List<RelatorioNotasResponse.NotaResumo> resumos = notas.stream()
                 .map(n -> new RelatorioNotasResponse.NotaResumo(
                         n.getId(), n.getNumeroNota(), n.getDataEmissao(),
                         n.getPrazoPagamento(), n.getValor(),
-                        n.getStatusPagamento().name()))
+                        calcularStatusExibicao(n)))
                 .toList();
+
+        // Aplicar filtro de status se fornecido
+        if ("PAGA".equalsIgnoreCase(statusFiltro)) {
+            resumos = resumos.stream()
+                    .filter(r -> "PAGA".equals(r.statusPagamento()))
+                    .toList();
+        } else if ("PENDENTE".equalsIgnoreCase(statusFiltro)) {
+            resumos = resumos.stream()
+                    .filter(r -> !"PAGA".equals(r.statusPagamento()))
+                    .toList();
+        }
+
+        BigDecimal totalNotas = resumos.stream()
+                .map(RelatorioNotasResponse.NotaResumo::valor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new RelatorioNotasResponse(clienteId, inicio, fim, resumos, totalNotas);
     }
@@ -67,12 +84,13 @@ public class RelatorioService {
         for (ServicoEntity s : servicos) {
             itens.add(new ExtratoClienteResponse.ItemExtrato(
                     "SERVICO", s.getId(), s.getNumeroOs(), null, s.getData(), s.getDescricao(),
-                    s.getValor(), null));
+                    s.getValor(), null, null, null));
         }
         for (NotaFiscalEntity n : notas) {
             itens.add(new ExtratoClienteResponse.ItemExtrato(
                     "NOTA_FISCAL", n.getId(), null, n.getNumeroNota(), n.getDataEmissao(),
-                    "NF " + n.getNumeroNota(), null, n.getValor()));
+                    "NF " + n.getNumeroNota(), null, n.getValor(),
+                    calcularStatusExibicao(n), n.getPrazoPagamento()));
         }
 
         // Ordenar por data, desempatar por tipo (serviço primeiro), depois id
@@ -92,7 +110,7 @@ public class RelatorioService {
             }
             itensComSaldo.add(new ExtratoClienteResponse.ItemExtrato(
                     item.tipo(), item.id(), item.numeroOs(), item.numeroNota(), item.data(), item.descricao(),
-                    item.valorServico(), item.valorNota()));
+                    item.valorServico(), item.valorNota(), item.statusPagamento(), item.prazoPagamento()));
         }
 
         BigDecimal totalServicos = servicos.stream()
@@ -150,5 +168,21 @@ public class RelatorioService {
                 })
                 .filter(s -> s.saldo().compareTo(BigDecimal.ZERO) != 0)
                 .toList();
+    }
+
+    /**
+     * Calcula o status de exibição:
+     * - PAGA → "PAGA"
+     * - NAO_PAGA e prazo já passou → "VENCIDA"
+     * - NAO_PAGA e prazo não passou → "NAO_PAGA"
+     */
+    private String calcularStatusExibicao(NotaFiscalEntity entity) {
+        if (entity.getStatusPagamento() == StatusPagamento.PAGA) {
+            return "PAGA";
+        }
+        if (entity.getPrazoPagamento().isBefore(LocalDate.now())) {
+            return "VENCIDA";
+        }
+        return "NAO_PAGA";
     }
 }

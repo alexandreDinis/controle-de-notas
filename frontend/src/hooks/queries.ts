@@ -206,10 +206,10 @@ export function useExtrato(clienteId: number | null) {
   });
 }
 
-export function useNotasPorPeriodo(clienteId: number | null, inicio: string, fim: string) {
+export function useNotasPorPeriodo(clienteId: number | null, inicio: string, fim: string, statusFiltro?: string | null) {
   return useQuery({
-    queryKey: ['relatorios', 'notas-periodo', clienteId, inicio, fim],
-    queryFn: () => relatorioApi.notasPorPeriodo(clienteId!, inicio, fim),
+    queryKey: ['relatorios', 'notas-periodo', clienteId, inicio, fim, statusFiltro],
+    queryFn: () => relatorioApi.notasPorPeriodo(clienteId!, inicio, fim, statusFiltro),
     enabled: !!clienteId && !!inicio && !!fim,
   });
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useClientes, useExtrato } from '../../hooks/queries';
 import PageContainer from '../../components/layout/PageContainer';
@@ -10,6 +10,8 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDate } from '../../utils';
 import GerarPdfModal from '../../components/modals/GerarPdfModal';
 
+type StatusFiltro = 'TODAS' | 'PAGA' | 'PENDENTE';
+
 export default function ExtratoPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const paramClienteId = searchParams.get('clienteId');
@@ -20,6 +22,7 @@ export default function ExtratoPage() {
   );
 
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [statusFiltro, setStatusFiltro] = useState<StatusFiltro>('TODAS');
 
   useEffect(() => {
     if (paramClienteId) setClienteId(Number(paramClienteId));
@@ -33,9 +36,37 @@ export default function ExtratoPage() {
 
   const { data: extrato, isLoading: loadingExtrato } = useExtrato(clienteId);
 
+  // Filtrar itens do extrato com base no filtro de status
+  const itensFiltrados = useMemo(() => {
+    if (!extrato?.itens) return [];
+    if (statusFiltro === 'TODAS') return extrato.itens;
+
+    return extrato.itens.filter((item) => {
+      // Quando filtrando por status, mostrar apenas notas fiscais
+      if (item.tipo === 'SERVICO') return false;
+      if (statusFiltro === 'PAGA') return item.statusPagamento === 'PAGA';
+      if (statusFiltro === 'PENDENTE') return item.statusPagamento !== 'PAGA';
+      return true;
+    });
+  }, [extrato?.itens, statusFiltro]);
+
+  // Contar notas por status para os badges do filtro
+  const contadores = useMemo(() => {
+    if (!extrato?.itens) return { todas: 0, pagas: 0, pendentes: 0 };
+    const notas = extrato.itens.filter((i) => i.tipo === 'NOTA_FISCAL');
+    return {
+      todas: notas.length,
+      pagas: notas.filter((n) => n.statusPagamento === 'PAGA').length,
+      pendentes: notas.filter((n) => n.statusPagamento !== 'PAGA').length,
+    };
+  }, [extrato?.itens]);
+
   if (loadingClientes) return <PageLoader />;
 
   const clienteSelecionado = clientes?.find((c) => c.id === clienteId);
+
+  // Mapear filtro do extrato para o filtro do PDF
+  const pdfStatusFiltro = statusFiltro === 'TODAS' ? null : statusFiltro;
 
   return (
     <PageContainer
@@ -148,16 +179,56 @@ export default function ExtratoPage() {
 
           {/* Tabela de Linha do Tempo */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <h2 className="font-heading font-semibold text-sm text-text-primary">
                 Linha do Tempo (Cronológica)
               </h2>
+
+              {/* Filtro Segmentado */}
+              <div className="flex items-center bg-surface border border-border rounded-lg p-0.5 gap-0.5">
+                {([
+                  { key: 'TODAS', label: 'Todas', count: contadores.todas },
+                  { key: 'PAGA', label: 'Pagas', count: contadores.pagas },
+                  { key: 'PENDENTE', label: 'Pendentes', count: contadores.pendentes },
+                ] as const).map(({ key, label, count }) => (
+                  <button
+                    key={key}
+                    onClick={() => setStatusFiltro(key)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 flex items-center gap-1.5 ${
+                      statusFiltro === key
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
+                    }`}
+                  >
+                    {label}
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full ${
+                        statusFiltro === key
+                          ? 'bg-white/20 text-white'
+                          : 'bg-surface-hover text-text-muted'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              {!extrato.itens.length ? (
+              {!itensFiltrados.length ? (
                 <EmptyState
-                  title="Nenhum lançamento registrado"
-                  description="Cadastre serviços ou notas fiscais para este cliente"
+                  title={
+                    statusFiltro === 'TODAS'
+                      ? 'Nenhum lançamento registrado'
+                      : statusFiltro === 'PAGA'
+                      ? 'Nenhuma nota paga encontrada'
+                      : 'Nenhuma nota pendente encontrada'
+                  }
+                  description={
+                    statusFiltro === 'TODAS'
+                      ? 'Cadastre serviços ou notas fiscais para este cliente'
+                      : 'Altere o filtro para visualizar outros lançamentos'
+                  }
                 />
               ) : (
                 <table className="w-full">
@@ -167,12 +238,13 @@ export default function ExtratoPage() {
                       <th className="text-left px-5 py-3 font-medium">Tipo</th>
                       <th className="text-left px-5 py-3 font-medium">Identificador</th>
                       <th className="text-left px-5 py-3 font-medium">Descrição</th>
+                      <th className="text-center px-5 py-3 font-medium">Status</th>
                       <th className="text-right px-5 py-3 font-medium">Valor Serviço</th>
                       <th className="text-right px-5 py-3 font-medium">Valor Nota</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {extrato.itens.map((item, idx) => (
+                    {itensFiltrados.map((item, idx) => (
                       <tr
                         key={`${item.tipo}-${item.id}-${idx}`}
                         className="hover:bg-surface-hover transition-colors"
@@ -197,6 +269,23 @@ export default function ExtratoPage() {
                         <td className="px-5 py-3 text-sm text-text-primary">
                           {item.descricao}
                         </td>
+                        <td className="px-5 py-3 text-sm text-center">
+                          {item.tipo === 'NOTA_FISCAL' ? (
+                            <>
+                              {item.statusPagamento === 'PAGA' && (
+                                <Badge variant="accent">PAGA</Badge>
+                              )}
+                              {item.statusPagamento === 'NAO_PAGA' && (
+                                <Badge variant="muted">NÃO PAGA</Badge>
+                              )}
+                              {item.statusPagamento === 'VENCIDA' && (
+                                <Badge variant="danger">ATRASADA</Badge>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-text-muted">—</span>
+                          )}
+                        </td>
                         <td className="px-5 py-3 text-sm text-right font-mono text-text-primary">
                           {item.valorServico != null ? formatCurrency(item.valorServico) : '—'}
                         </td>
@@ -220,6 +309,7 @@ export default function ExtratoPage() {
           onClose={() => setIsPdfModalOpen(false)}
           clienteId={clienteId}
           clienteNome={clienteSelecionado.nome}
+          statusFiltro={pdfStatusFiltro}
         />
       )}
     </PageContainer>

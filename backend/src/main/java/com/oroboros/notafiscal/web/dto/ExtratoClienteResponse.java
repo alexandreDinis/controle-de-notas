@@ -19,6 +19,8 @@ public record ExtratoClienteResponse(
             LocalDate data,
             String descricao,
             BigDecimal valorServico,
-            BigDecimal valorNota
+            BigDecimal valorNota,
+            String statusPagamento,
+            LocalDate prazoPagamento
     ) {}
 }
