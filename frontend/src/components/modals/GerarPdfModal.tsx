@@ -3,6 +3,7 @@ import { useEmpresa } from '../../hooks/queries';
 import { relatorioApi } from '../../api';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import Badge from '../ui/Badge';
 import toast from 'react-hot-toast';
 
 interface GerarPdfModalProps {
@@ -10,9 +11,10 @@ interface GerarPdfModalProps {
   onClose: () => void;
   clienteId: number;
   clienteNome: string;
+  statusFiltro?: string | null;
 }
 
-export default function GerarPdfModal({ isOpen, onClose, clienteId, clienteNome }: GerarPdfModalProps) {
+export default function GerarPdfModal({ isOpen, onClose, clienteId, clienteNome, statusFiltro }: GerarPdfModalProps) {
   const { data: empresa } = useEmpresa();
   const now = new Date();
   const yearStart = `${now.getFullYear()}-01-01`;
@@ -29,6 +31,12 @@ export default function GerarPdfModal({ isOpen, onClose, clienteId, clienteNome 
     (empresa?.banco && empresa.banco.trim() !== '')
   );
 
+  const filtroLabel = statusFiltro === 'PAGA'
+    ? 'Apenas Notas Pagas'
+    : statusFiltro === 'PENDENTE'
+    ? 'Apenas Notas Pendentes'
+    : null;
+
   const handleGerarPdf = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inicio || !fim) {
@@ -44,7 +52,7 @@ export default function GerarPdfModal({ isOpen, onClose, clienteId, clienteNome 
 
     setLoading(true);
     try {
-      const { data } = await relatorioApi.downloadPdfCobranca(clienteId, inicio, fim);
+      const { data } = await relatorioApi.downloadPdfCobranca(clienteId, inicio, fim, statusFiltro);
       const url = window.URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
@@ -78,9 +86,19 @@ export default function GerarPdfModal({ isOpen, onClose, clienteId, clienteNome 
           </button>
         </div>
 
-        <p className="text-xs text-text-secondary">
-          Cliente: <strong className="text-text-primary">{clienteNome}</strong>
-        </p>
+        <div className="space-y-1">
+          <p className="text-xs text-text-secondary">
+            Cliente: <strong className="text-text-primary">{clienteNome}</strong>
+          </p>
+          {filtroLabel && (
+            <p className="text-xs text-text-secondary flex items-center gap-2">
+              Filtro ativo:{' '}
+              <Badge variant={statusFiltro === 'PAGA' ? 'accent' : 'danger'}>
+                {filtroLabel}
+              </Badge>
+            </p>
+          )}
+        </div>
 
         {!temDadosPagamento && (
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning flex items-start gap-2">

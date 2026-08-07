@@ -24,11 +24,11 @@ public class PdfReportService {
     private final EmpresaService empresaService;
     private final ClienteRepository clienteRepository;
 
-    public byte[] gerarRelatorioCobrancaPdf(Long clienteId, LocalDate inicio, LocalDate fim) {
+    public byte[] gerarRelatorioCobrancaPdf(Long clienteId, LocalDate inicio, LocalDate fim, String statusFiltro) {
         ClienteEntity cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado com ID: " + clienteId));
 
-        RelatorioNotasResponse relatorioNotas = relatorioService.notasPorClientePeriodo(clienteId, inicio, fim);
+        RelatorioNotasResponse relatorioNotas = relatorioService.notasPorClientePeriodo(clienteId, inicio, fim, statusFiltro);
         EmpresaResponse empresa = empresaService.obter();
 
         String logoBase64 = null;
@@ -42,6 +42,16 @@ public class PdfReportService {
             }
         }
 
+        // Determinar label do filtro para exibição no PDF
+        String filtroLabel;
+        if ("PAGA".equalsIgnoreCase(statusFiltro)) {
+            filtroLabel = "Apenas Notas Pagas";
+        } else if ("PENDENTE".equalsIgnoreCase(statusFiltro)) {
+            filtroLabel = "Apenas Notas Pendentes";
+        } else {
+            filtroLabel = null;
+        }
+
         Context context = new Context();
         context.setVariable("cliente", cliente);
         context.setVariable("empresa", empresa);
@@ -50,6 +60,7 @@ public class PdfReportService {
         context.setVariable("fim", fim);
         context.setVariable("notas", relatorioNotas.notas());
         context.setVariable("totalNotas", relatorioNotas.totalNotas());
+        context.setVariable("filtroLabel", filtroLabel);
 
         String htmlContent = templateEngine.process("relatorio-cobranca", context);
 

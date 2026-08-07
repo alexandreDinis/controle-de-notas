@@ -114,6 +114,8 @@ export interface ItemExtrato {
   descricao: string;
   valorServico: number | null;
   valorNota: number | null;
+  statusPagamento?: 'PAGA' | 'NAO_PAGA' | 'VENCIDA' | null;
+  prazoPagamento?: string | null;
 }
 
 // === Saldo ===

@@ -73,17 +73,17 @@ export const notaFiscalApi = {
 export const relatorioApi = {
   extrato: (clienteId: number) =>
     api.get<ExtratoClienteResponse>(`/clientes/${clienteId}/extrato`).then(r => r.data),
-  notasPorPeriodo: (clienteId: number, inicio: string, fim: string) =>
+  notasPorPeriodo: (clienteId: number, inicio: string, fim: string, statusFiltro?: string | null) =>
     api.get<RelatorioNotasResponse>(`/clientes/${clienteId}/notas-fiscais/relatorio`, {
-      params: { inicio, fim },
+      params: { inicio, fim, ...(statusFiltro ? { statusFiltro } : {}) },
     }).then(r => r.data),
   clientesComDebito: () =>
     api.get<SaldoClienteResponse[]>('/relatorios/clientes-com-debito').then(r => r.data),
   clientesComCredito: () =>
     api.get<SaldoClienteResponse[]>('/relatorios/clientes-com-credito').then(r => r.data),
-  downloadPdfCobranca: (clienteId: number, inicio: string, fim: string) =>
+  downloadPdfCobranca: (clienteId: number, inicio: string, fim: string, statusFiltro?: string | null) =>
     api.get(`/clientes/${clienteId}/relatorio-cobranca/pdf`, {
-      params: { inicio, fim },
+      params: { inicio, fim, ...(statusFiltro ? { statusFiltro } : {}) },
       responseType: 'blob',
     }).then(r => ({
       data: r.data as Blob,

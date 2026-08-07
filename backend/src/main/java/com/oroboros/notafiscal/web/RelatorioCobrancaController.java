@@ -21,9 +21,10 @@ public class RelatorioCobrancaController {
     public ResponseEntity<byte[]> gerarRelatorioCobrancaPdf(
             @PathVariable Long clienteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) String statusFiltro
     ) {
-        byte[] pdfBytes = pdfReportService.gerarRelatorioCobrancaPdf(clienteId, inicio, fim);
+        byte[] pdfBytes = pdfReportService.gerarRelatorioCobrancaPdf(clienteId, inicio, fim, statusFiltro);
 
         String filename = String.format("cobranca-cliente-%d-%s-a-%s.pdf", clienteId, inicio, fim);
 

@@ -28,9 +28,10 @@ public class RelatorioController {
     public ResponseEntity<RelatorioNotasResponse> notasPorPeriodo(
             @PathVariable Long clienteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(required = false) String statusFiltro) {
         return ResponseEntity.ok(
-                relatorioService.notasPorClientePeriodo(clienteId, inicio, fim));
+                relatorioService.notasPorClientePeriodo(clienteId, inicio, fim, statusFiltro));
     }
 
     @GetMapping("/api/relatorios/clientes-com-debito")

@@ -74,7 +74,8 @@ class PdfReportServiceTest {
         byte[] pdfBytes = pdfReportService.gerarRelatorioCobrancaPdf(
                 cliente.getId(),
                 LocalDate.of(2025, 1, 1),
-                LocalDate.of(2025, 12, 31)
+                LocalDate.of(2025, 12, 31),
+                null
         );
 
         // 5. Asserções
